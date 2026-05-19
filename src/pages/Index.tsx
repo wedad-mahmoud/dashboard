@@ -68,16 +68,26 @@ const Index = () => {
   const fetchRates = async () => {
     setLoading(true);
     try {
-      const response = await fetch('https://api.exchangerate.host/latest?base=USD');
+      // استخدام API بديل ومجاني لا يتطلب مفتاحاً
+      const response = await fetch('https://open.er-api.com/v6/latest/USD');
       const data = await response.json();
-      if (data.rates) {
+      
+      if (data && data.rates) {
         setRates(data.rates);
         setLastUpdate(new Date().toLocaleTimeString('ar-EG'));
-        showSuccess("تم تحديث النبض الرقمي");
+        showSuccess("تم تحديث النبض الرقمي بنجاح");
+      } else {
+        throw new Error("بيانات غير صالحة");
       }
     } catch (error) {
-      showError("خطأ في الاتصال بالشبكة العصبية");
-      setRates({ "USD": 1, "EUR": 0.92, "GBP": 0.79, "JPY": 151.42, "SAR": 3.75, "AED": 3.67, "EGP": 48.50 });
+      console.error("Fetch error:", error);
+      showError("خطأ في الاتصال بالشبكة، تم استخدام بيانات احتياطية");
+      // بيانات احتياطية في حال فشل الـ API تماماً
+      setRates({ 
+        "USD": 1, "EUR": 0.92, "GBP": 0.79, "JPY": 151.42, 
+        "SAR": 3.75, "AED": 3.67, "EGP": 48.50, "KWD": 0.31,
+        "QAR": 3.64, "BHD": 0.38, "OMR": 0.38, "JOD": 0.71
+      });
     } finally {
       setLoading(false);
     }
@@ -123,7 +133,7 @@ const Index = () => {
             <RefreshCw className={`w-5 h-5 text-lime-400 ${loading ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
             <span className="font-bold text-sm">مزامنة البيانات</span>
             <div className="h-4 w-[1px] bg-purple-500/30 mx-2" />
-            <span className="text-[10px] text-purple-400 font-mono">{lastUpdate}</span>
+            <span className="text-[10px] text-purple-400 font-mono">{lastUpdate || "--:--"}</span>
           </motion.button>
         </header>
 
@@ -144,12 +154,12 @@ const Index = () => {
                 </div>
                 <h3 className="text-purple-400/50 text-xs font-mono mb-2 uppercase tracking-tighter">{symbol} / USD UNIT</h3>
                 <div className="text-4xl font-black tracking-tighter text-white group-hover:text-lime-400 transition-colors">
-                  {rates[symbol] ? rates[symbol].toFixed(4) : '0.0000'}
+                  {rates[symbol] ? rates[symbol].toFixed(4) : (loading ? '...' : '0.0000')}
                 </div>
                 <div className="mt-6 h-1.5 w-full bg-purple-900/30 rounded-full overflow-hidden">
                   <motion.div 
                     initial={{ width: 0 }}
-                    animate={{ width: changes[symbol]?.isUp ? '80%' : '40%' }}
+                    animate={{ width: rates[symbol] ? (changes[symbol]?.isUp ? '80%' : '40%') : 0 }}
                     className={`h-full shadow-[0_0_10px_rgba(163,230,53,0.5)] ${changes[symbol]?.isUp ? 'bg-lime-400' : 'bg-purple-500'}`}
                   />
                 </div>
