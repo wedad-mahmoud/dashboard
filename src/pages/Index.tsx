@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, DollarSign, Globe, Activity, RefreshCw, ArrowUpRight, ArrowDownRight, X } from 'lucide-react';
+import { TrendingUp, DollarSign, Globe, Activity, RefreshCw, ArrowUpRight, ArrowDownRight, X, Search } from 'lucide-react';
 import ThreeDCard from '@/components/ThreeDCard';
 import CurrencyChart from '@/components/CurrencyChart';
 import { showSuccess, showError } from '@/utils/toast';
@@ -17,8 +17,8 @@ const Index = () => {
   const [lastUpdate, setLastUpdate] = useState<string>("");
   const [showAll, setShowAll] = useState(false);
   const [timeRange, setTimeRange] = useState<'7d' | '1m'>('7d');
+  const [searchTerm, setSearchTerm] = useState("");
 
-  // محاكاة بيانات الرسم البياني بناءً على الفترة
   const chartData = useMemo(() => {
     if (timeRange === '7d') {
       return [
@@ -35,7 +35,6 @@ const Index = () => {
     }
   }, [timeRange]);
 
-  // محاكاة فروق الأسعار (لأن الـ API المجاني لا يعطي التغير اللحظي في طلب واحد)
   const changes = useMemo(() => {
     const mockChanges: { [key: string]: { val: string, isUp: boolean } } = {};
     ["EUR", "GBP", "JPY", "SAR", "AED", "EGP"].forEach(s => {
@@ -69,6 +68,12 @@ const Index = () => {
   useEffect(() => {
     fetchRates();
   }, []);
+
+  const filteredRates = useMemo(() => {
+    return Object.entries(rates).filter(([symbol]) => 
+      symbol.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [rates, searchTerm]);
 
   const topCurrencies = ["EUR", "GBP", "JPY", "SAR", "AED", "EGP"];
 
@@ -140,7 +145,6 @@ const Index = () => {
 
         {/* Main Content Area */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Chart Section */}
           <div className="lg:col-span-2">
             <ThreeDCard className="p-6">
               <div className="flex items-center justify-between mb-8">
@@ -167,7 +171,6 @@ const Index = () => {
             </ThreeDCard>
           </div>
 
-          {/* Side List */}
           <div className="lg:col-span-1">
             <ThreeDCard className="p-6">
               <div className="flex items-center gap-3 mb-6">
@@ -203,31 +206,57 @@ const Index = () => {
         {/* Modal for All Currencies */}
         <AnimatePresence>
           {showAll && (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
               <motion.div 
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 onClick={() => setShowAll(false)}
-                className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
+                className="absolute inset-0 bg-slate-950/90 backdrop-blur-md"
               />
               <motion.div 
                 initial={{ scale: 0.9, opacity: 0, y: 20 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                className="relative w-full max-w-2xl bg-slate-900 border border-slate-700 rounded-3xl shadow-2xl overflow-hidden"
+                className="relative w-full max-w-3xl bg-slate-900 border border-slate-700 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
               >
-                <div className="p-6 border-b border-slate-800 flex justify-between items-center">
-                  <h2 className="text-xl font-bold">جميع العملات المتاحة</h2>
-                  <button onClick={() => setShowAll(false)} className="p-2 hover:bg-slate-800 rounded-full transition-colors">
+                <div className="p-8 border-b border-slate-800 flex justify-between items-center bg-slate-900/50 backdrop-blur-xl sticky top-0 z-20">
+                  <div>
+                    <h2 className="text-2xl font-bold text-white">جميع العملات المتاحة</h2>
+                    <p className="text-slate-400 text-sm mt-1">إجمالي {Object.keys(rates).length} عملة عالمية</p>
+                  </div>
+                  <button onClick={() => setShowAll(false)} className="p-3 hover:bg-slate-800 rounded-2xl transition-colors text-slate-400 hover:text-white">
                     <X className="w-6 h-6" />
                   </button>
                 </div>
-                <div className="p-6 max-h-[60vh] overflow-y-auto grid grid-cols-2 md:grid-cols-3 gap-4 custom-scrollbar">
-                  {Object.entries(rates).map(([symbol, rate]) => (
-                    <div key={symbol} className="p-3 bg-slate-800/50 rounded-xl border border-slate-700/50 flex flex-col">
-                      <span className="text-blue-400 font-bold">{symbol}</span>
-                      <span className="text-lg font-mono">{rate.toFixed(4)}</span>
-                    </div>
+                
+                <div className="p-6 bg-slate-800/30 border-b border-slate-800">
+                  <div className="relative">
+                    <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 w-5 h-5" />
+                    <input 
+                      type="text" 
+                      placeholder="ابحث عن عملة محددة..." 
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl py-3 pr-12 pl-4 text-white outline-none focus:ring-2 ring-blue-500/50 transition-all"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="p-8 overflow-y-auto custom-scrollbar grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {filteredRates.map(([symbol, rate]) => (
+                    <motion.div 
+                      layout
+                      key={symbol} 
+                      className="p-4 bg-slate-800/40 rounded-2xl border border-slate-700/50 hover:border-blue-500/50 transition-all group"
+                    >
+                      <span className="text-blue-400 font-bold text-sm group-hover:text-blue-300">{symbol}</span>
+                      <div className="text-xl font-mono mt-1 text-white">{rate.toFixed(4)}</div>
+                    </motion.div>
                   ))}
+                  {filteredRates.length === 0 && (
+                    <div className="col-span-full py-20 text-center text-slate-500">
+                      لا توجد نتائج تطابق بحثك
+                    </div>
+                  )}
                 </div>
               </motion.div>
             </div>
@@ -236,7 +265,7 @@ const Index = () => {
 
         {/* Footer */}
         <footer className="mt-20 pb-10 text-center text-slate-500 text-sm border-t border-slate-800 pt-8">
-          <p>© 2024 لوحة تحكم العملات التقنية - جميع الحقوق محفوظة</p>
+          <p>© 2026 لوحة تحكم العملات التقنية - جميع الحقوق محفوظة</p>
         </footer>
       </div>
     </div>
