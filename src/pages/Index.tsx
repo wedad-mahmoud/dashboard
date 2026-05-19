@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, DollarSign, Globe, Activity, RefreshCw, ArrowUpRight, ArrowDownRight, X, Search } from 'lucide-react';
+import { TrendingUp, DollarSign, Globe, Activity, RefreshCw, ArrowUpRight, ArrowDownRight, X, Search, ArrowLeftRight } from 'lucide-react';
 import ThreeDCard from '@/components/ThreeDCard';
 import CurrencyChart from '@/components/CurrencyChart';
 import { showSuccess, showError } from '@/utils/toast';
@@ -18,6 +18,11 @@ const Index = () => {
   const [showAll, setShowAll] = useState(false);
   const [timeRange, setTimeRange] = useState<'7d' | '1m'>('7d');
   const [searchTerm, setSearchTerm] = useState("");
+
+  // حالات محول العملات
+  const [amount, setAmount] = useState<number>(1);
+  const [fromCurrency, setFromCurrency] = useState("USD");
+  const [toCurrency, setToCurrency] = useState("EUR");
 
   const chartData = useMemo(() => {
     if (timeRange === '7d') {
@@ -59,7 +64,7 @@ const Index = () => {
       }
     } catch (error) {
       showError("فشل التحديث، يتم عرض بيانات مخزنة");
-      setRates({ "EUR": 0.92, "GBP": 0.79, "JPY": 151.42, "SAR": 3.75, "AED": 3.67, "EGP": 48.50 });
+      setRates({ "USD": 1, "EUR": 0.92, "GBP": 0.79, "JPY": 151.42, "SAR": 3.75, "AED": 3.67, "EGP": 48.50 });
     } finally {
       setLoading(false);
     }
@@ -68,6 +73,13 @@ const Index = () => {
   useEffect(() => {
     fetchRates();
   }, []);
+
+  const convertedAmount = useMemo(() => {
+    if (!rates[fromCurrency] || !rates[toCurrency]) return 0;
+    // التحويل من العملة A إلى USD ثم إلى العملة B
+    const inUSD = amount / rates[fromCurrency];
+    return inUSD * rates[toCurrency];
+  }, [amount, fromCurrency, toCurrency, rates]);
 
   const filteredRates = useMemo(() => {
     return Object.entries(rates).filter(([symbol]) => 
@@ -171,34 +183,68 @@ const Index = () => {
             </ThreeDCard>
           </div>
 
+          {/* Currency Converter Section (Replacement) */}
           <div className="lg:col-span-1">
             <ThreeDCard className="p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <Globe className="text-purple-400" />
-                <h2 className="text-xl font-semibold">الأسواق العالمية</h2>
+              <div className="flex items-center gap-3 mb-8">
+                <ArrowLeftRight className="text-blue-400" />
+                <h2 className="text-xl font-semibold">محول العملات الذكي</h2>
               </div>
-              <div className="space-y-4">
-                {Object.entries(rates).slice(0, 6).map(([symbol, rate]) => (
-                  <div key={symbol} className="flex items-center justify-between p-3 rounded-lg hover:bg-slate-800/50 transition-colors border border-transparent hover:border-slate-700">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold">
-                        {symbol.substring(0, 2)}
-                      </div>
-                      <span className="font-medium">{symbol}</span>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-mono">{rate.toFixed(2)}</div>
-                      <div className="text-[10px] text-slate-500">مقابل 1 دولار</div>
-                    </div>
+              
+              <div className="space-y-6">
+                <div>
+                  <label className="text-xs text-slate-500 mb-2 block">المبلغ المراد تحويله</label>
+                  <input 
+                    type="number" 
+                    value={amount}
+                    onChange={(e) => setAmount(Number(e.target.value))}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl py-3 px-4 text-white outline-none focus:ring-2 ring-blue-500/50 transition-all font-mono text-lg"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs text-slate-500 mb-2 block">من</label>
+                    <select 
+                      value={fromCurrency}
+                      onChange={(e) => setFromCurrency(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl py-3 px-2 text-white outline-none focus:ring-2 ring-blue-500/50 transition-all"
+                    >
+                      {Object.keys(rates).map(symbol => (
+                        <option key={symbol} value={symbol}>{symbol}</option>
+                      ))}
+                    </select>
                   </div>
-                ))}
+                  <div>
+                    <label className="text-xs text-slate-500 mb-2 block">إلى</label>
+                    <select 
+                      value={toCurrency}
+                      onChange={(e) => setToCurrency(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl py-3 px-2 text-white outline-none focus:ring-2 ring-blue-500/50 transition-all"
+                    >
+                      {Object.keys(rates).map(symbol => (
+                        <option key={symbol} value={symbol}>{symbol}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="p-6 bg-blue-600/10 border border-blue-500/20 rounded-2xl text-center">
+                  <div className="text-slate-400 text-xs mb-1">النتيجة التقريبية</div>
+                  <div className="text-3xl font-bold text-blue-400 font-mono">
+                    {convertedAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                  <div className="text-xs text-slate-500 mt-1">{toCurrency}</div>
+                </div>
+
+                <button 
+                  onClick={() => setShowAll(true)}
+                  className="w-full py-3 text-sm text-slate-400 hover:text-white font-medium border border-slate-700 rounded-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
+                >
+                  <Globe className="w-4 h-4" />
+                  عرض جميع الرموز
+                </button>
               </div>
-              <button 
-                onClick={() => setShowAll(true)}
-                className="w-full mt-6 py-3 text-sm text-blue-400 hover:text-blue-300 font-medium border border-blue-400/20 rounded-xl hover:bg-blue-400/5 transition-all"
-              >
-                عرض جميع العملات
-              </button>
             </ThreeDCard>
           </div>
         </div>
@@ -220,7 +266,7 @@ const Index = () => {
               >
                 <div className="p-8 border-b border-slate-800 flex justify-between items-center bg-slate-900/50 backdrop-blur-xl sticky top-0 z-20">
                   <div>
-                    <h2 className="text-2xl font-bold text-white">جميع العملات المتاحة</h2>
+                    <h2 className="text-2xl font-bold text-white">جميع رموز العملات</h2>
                     <p className="text-slate-400 text-sm mt-1">إجمالي {Object.keys(rates).length} عملة عالمية</p>
                   </div>
                   <button onClick={() => setShowAll(false)} className="p-3 hover:bg-slate-800 rounded-2xl transition-colors text-slate-400 hover:text-white">
@@ -233,7 +279,7 @@ const Index = () => {
                     <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 w-5 h-5" />
                     <input 
                       type="text" 
-                      placeholder="ابحث عن عملة محددة..." 
+                      placeholder="ابحث عن رمز عملة..." 
                       className="w-full bg-slate-950 border border-slate-700 rounded-xl py-3 pr-12 pl-4 text-white outline-none focus:ring-2 ring-blue-500/50 transition-all"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
@@ -246,17 +292,16 @@ const Index = () => {
                     <motion.div 
                       layout
                       key={symbol} 
-                      className="p-4 bg-slate-800/40 rounded-2xl border border-slate-700/50 hover:border-blue-500/50 transition-all group"
+                      className="p-4 bg-slate-800/40 rounded-2xl border border-slate-700/50 hover:border-blue-500/50 transition-all group cursor-pointer"
+                      onClick={() => {
+                        setToCurrency(symbol);
+                        setShowAll(false);
+                      }}
                     >
                       <span className="text-blue-400 font-bold text-sm group-hover:text-blue-300">{symbol}</span>
                       <div className="text-xl font-mono mt-1 text-white">{rate.toFixed(4)}</div>
                     </motion.div>
                   ))}
-                  {filteredRates.length === 0 && (
-                    <div className="col-span-full py-20 text-center text-slate-500">
-                      لا توجد نتائج تطابق بحثك
-                    </div>
-                  )}
                 </div>
               </motion.div>
             </div>
