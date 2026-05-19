@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, DollarSign, Globe, Activity, RefreshCw, ArrowUpRight, ArrowDownRight, X, Search, ArrowLeftRight } from 'lucide-react';
+import { TrendingUp, DollarSign, Globe, Activity, RefreshCw, ArrowUpRight, ArrowDownRight, X, Search, Info } from 'lucide-react';
 import ThreeDCard from '@/components/ThreeDCard';
 import CurrencyChart from '@/components/CurrencyChart';
 import { showSuccess, showError } from '@/utils/toast';
@@ -11,6 +11,27 @@ interface ExchangeRates {
   [key: string]: number;
 }
 
+// خريطة لمعلومات العملات (الاسم والدولة)
+const currencyDetails: { [key: string]: { name: string, country: string } } = {
+  "USD": { name: "دولار أمريكي", country: "الولايات المتحدة" },
+  "EUR": { name: "يورو", country: "الاتحاد الأوروبي" },
+  "GBP": { name: "جنيه إسترليني", country: "المملكة المتحدة" },
+  "JPY": { name: "ين ياباني", country: "اليابان" },
+  "SAR": { name: "ريال سعودي", country: "المملكة العربية السعودية" },
+  "AED": { name: "درهم إماراتي", country: "الإمارات العربية المتحدة" },
+  "EGP": { name: "جنيه مصري", country: "جمهورية مصر العربية" },
+  "KWD": { name: "دينار كويتي", country: "الكويت" },
+  "QAR": { name: "ريال قطري", country: "قطر" },
+  "BHD": { name: "دينار بحريني", country: "البحرين" },
+  "OMR": { name: "ريال عماني", country: "سلطنة عمان" },
+  "JOD": { name: "دينار أردني", country: "الأردن" },
+  "TRY": { name: "ليرة تركية", country: "تركيا" },
+  "CNY": { name: "يوان صيني", country: "الصين" },
+  "CHF": { name: "فرنك سويسري", country: "سويسرا" },
+  "CAD": { name: "دولار كندي", country: "كندا" },
+  "AUD": { name: "دولار أسترالي", country: "أستراليا" },
+};
+
 const Index = () => {
   const [rates, setRates] = useState<ExchangeRates>({});
   const [loading, setLoading] = useState(true);
@@ -18,11 +39,6 @@ const Index = () => {
   const [showAll, setShowAll] = useState(false);
   const [timeRange, setTimeRange] = useState<'7d' | '1m'>('7d');
   const [searchTerm, setSearchTerm] = useState("");
-
-  // حالات محول العملات
-  const [amount, setAmount] = useState<number>(1);
-  const [fromCurrency, setFromCurrency] = useState("USD");
-  const [toCurrency, setToCurrency] = useState("EUR");
 
   const chartData = useMemo(() => {
     if (timeRange === '7d') {
@@ -74,16 +90,10 @@ const Index = () => {
     fetchRates();
   }, []);
 
-  const convertedAmount = useMemo(() => {
-    if (!rates[fromCurrency] || !rates[toCurrency]) return 0;
-    // التحويل من العملة A إلى USD ثم إلى العملة B
-    const inUSD = amount / rates[fromCurrency];
-    return inUSD * rates[toCurrency];
-  }, [amount, fromCurrency, toCurrency, rates]);
-
   const filteredRates = useMemo(() => {
     return Object.entries(rates).filter(([symbol]) => 
-      symbol.toLowerCase().includes(searchTerm.toLowerCase())
+      symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (currencyDetails[symbol]?.name || "").includes(searchTerm)
     );
   }, [rates, searchTerm]);
 
@@ -183,68 +193,37 @@ const Index = () => {
             </ThreeDCard>
           </div>
 
-          {/* Currency Converter Section (Replacement) */}
+          {/* Currency Directory Section (Replacement) */}
           <div className="lg:col-span-1">
-            <ThreeDCard className="p-6">
-              <div className="flex items-center gap-3 mb-8">
-                <ArrowLeftRight className="text-blue-400" />
-                <h2 className="text-xl font-semibold">محول العملات الذكي</h2>
+            <ThreeDCard className="p-6 flex flex-col h-full">
+              <div className="flex items-center gap-3 mb-6">
+                <Info className="text-blue-400" />
+                <h2 className="text-xl font-semibold">دليل العملات العالمي</h2>
               </div>
               
-              <div className="space-y-6">
-                <div>
-                  <label className="text-xs text-slate-500 mb-2 block">المبلغ المراد تحويله</label>
-                  <input 
-                    type="number" 
-                    value={amount}
-                    onChange={(e) => setAmount(Number(e.target.value))}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl py-3 px-4 text-white outline-none focus:ring-2 ring-blue-500/50 transition-all font-mono text-lg"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs text-slate-500 mb-2 block">من</label>
-                    <select 
-                      value={fromCurrency}
-                      onChange={(e) => setFromCurrency(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl py-3 px-2 text-white outline-none focus:ring-2 ring-blue-500/50 transition-all"
-                    >
-                      {Object.keys(rates).map(symbol => (
-                        <option key={symbol} value={symbol}>{symbol}</option>
-                      ))}
-                    </select>
+              <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-1">
+                {Object.keys(currencyDetails).map((symbol) => (
+                  <div key={symbol} className="p-4 bg-slate-950/50 border border-slate-800 rounded-2xl hover:border-blue-500/30 transition-all group">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-blue-400 font-bold font-mono">{symbol}</span>
+                      <span className="text-[10px] px-2 py-0.5 bg-slate-800 rounded-full text-slate-400 group-hover:text-blue-300 transition-colors">
+                        {currencyDetails[symbol].country}
+                      </span>
+                    </div>
+                    <div className="text-sm text-slate-200 font-medium">
+                      {currencyDetails[symbol].name}
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-xs text-slate-500 mb-2 block">إلى</label>
-                    <select 
-                      value={toCurrency}
-                      onChange={(e) => setToCurrency(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl py-3 px-2 text-white outline-none focus:ring-2 ring-blue-500/50 transition-all"
-                    >
-                      {Object.keys(rates).map(symbol => (
-                        <option key={symbol} value={symbol}>{symbol}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="p-6 bg-blue-600/10 border border-blue-500/20 rounded-2xl text-center">
-                  <div className="text-slate-400 text-xs mb-1">النتيجة التقريبية</div>
-                  <div className="text-3xl font-bold text-blue-400 font-mono">
-                    {convertedAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </div>
-                  <div className="text-xs text-slate-500 mt-1">{toCurrency}</div>
-                </div>
-
-                <button 
-                  onClick={() => setShowAll(true)}
-                  className="w-full py-3 text-sm text-slate-400 hover:text-white font-medium border border-slate-700 rounded-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
-                >
-                  <Globe className="w-4 h-4" />
-                  عرض جميع الرموز
-                </button>
+                ))}
               </div>
+
+              <button 
+                onClick={() => setShowAll(true)}
+                className="w-full mt-6 py-3 text-sm text-slate-400 hover:text-white font-medium border border-slate-700 rounded-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
+              >
+                <Globe className="w-4 h-4" />
+                عرض جميع الرموز
+              </button>
             </ThreeDCard>
           </div>
         </div>
@@ -279,7 +258,7 @@ const Index = () => {
                     <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 w-5 h-5" />
                     <input 
                       type="text" 
-                      placeholder="ابحث عن رمز عملة..." 
+                      placeholder="ابحث عن رمز أو اسم عملة..." 
                       className="w-full bg-slate-950 border border-slate-700 rounded-xl py-3 pr-12 pl-4 text-white outline-none focus:ring-2 ring-blue-500/50 transition-all"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
@@ -287,19 +266,21 @@ const Index = () => {
                   </div>
                 </div>
 
-                <div className="p-8 overflow-y-auto custom-scrollbar grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div className="p-8 overflow-y-auto custom-scrollbar grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredRates.map(([symbol, rate]) => (
                     <motion.div 
                       layout
                       key={symbol} 
-                      className="p-4 bg-slate-800/40 rounded-2xl border border-slate-700/50 hover:border-blue-500/50 transition-all group cursor-pointer"
-                      onClick={() => {
-                        setToCurrency(symbol);
-                        setShowAll(false);
-                      }}
+                      className="p-4 bg-slate-800/40 rounded-2xl border border-slate-700/50 hover:border-blue-500/50 transition-all group"
                     >
-                      <span className="text-blue-400 font-bold text-sm group-hover:text-blue-300">{symbol}</span>
-                      <div className="text-xl font-mono mt-1 text-white">{rate.toFixed(4)}</div>
+                      <div className="flex justify-between items-start">
+                        <span className="text-blue-400 font-bold text-sm">{symbol}</span>
+                        <span className="text-[10px] text-slate-500">{currencyDetails[symbol]?.country || "دولي"}</span>
+                      </div>
+                      <div className="text-lg font-mono mt-1 text-white">{rate.toFixed(4)}</div>
+                      <div className="text-[10px] text-slate-400 mt-1 truncate">
+                        {currencyDetails[symbol]?.name || "عملة عالمية"}
+                      </div>
                     </motion.div>
                   ))}
                 </div>
