@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, DollarSign, Globe, Activity, RefreshCw, ArrowUpRight, ArrowDownRight, X, Search, Info } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { TrendingUp, DollarSign, Activity, RefreshCw, ArrowUpRight, ArrowDownRight, Info } from 'lucide-react';
 import ThreeDCard from '@/components/ThreeDCard';
 import CurrencyChart from '@/components/CurrencyChart';
 import { showSuccess, showError } from '@/utils/toast';
@@ -36,9 +36,7 @@ const Index = () => {
   const [rates, setRates] = useState<ExchangeRates>({});
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<string>("");
-  const [showAll, setShowAll] = useState(false);
   const [timeRange, setTimeRange] = useState<'7d' | '1m'>('7d');
-  const [searchTerm, setSearchTerm] = useState("");
 
   const chartData = useMemo(() => {
     if (timeRange === '7d') {
@@ -89,13 +87,6 @@ const Index = () => {
   useEffect(() => {
     fetchRates();
   }, []);
-
-  const filteredRates = useMemo(() => {
-    return Object.entries(rates).filter(([symbol]) => 
-      symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (currencyDetails[symbol]?.name || "").includes(searchTerm)
-    );
-  }, [rates, searchTerm]);
 
   const topCurrencies = ["EUR", "GBP", "JPY", "SAR", "AED", "EGP"];
 
@@ -193,7 +184,7 @@ const Index = () => {
             </ThreeDCard>
           </div>
 
-          {/* Currency Directory Section (Replacement) */}
+          {/* Currency Directory Section */}
           <div className="lg:col-span-1">
             <ThreeDCard className="p-6 flex flex-col h-full">
               <div className="flex items-center gap-3 mb-6">
@@ -216,78 +207,9 @@ const Index = () => {
                   </div>
                 ))}
               </div>
-
-              <button 
-                onClick={() => setShowAll(true)}
-                className="w-full mt-6 py-3 text-sm text-slate-400 hover:text-white font-medium border border-slate-700 rounded-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
-              >
-                <Globe className="w-4 h-4" />
-                عرض جميع الرموز
-              </button>
             </ThreeDCard>
           </div>
         </div>
-
-        {/* Modal for All Currencies */}
-        <AnimatePresence>
-          {showAll && (
-            <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
-              <motion.div 
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                onClick={() => setShowAll(false)}
-                className="absolute inset-0 bg-slate-950/90 backdrop-blur-md"
-              />
-              <motion.div 
-                initial={{ scale: 0.9, opacity: 0, y: 20 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                className="relative w-full max-w-3xl bg-slate-900 border border-slate-700 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
-              >
-                <div className="p-8 border-b border-slate-800 flex justify-between items-center bg-slate-900/50 backdrop-blur-xl sticky top-0 z-20">
-                  <div>
-                    <h2 className="text-2xl font-bold text-white">جميع رموز العملات</h2>
-                    <p className="text-slate-400 text-sm mt-1">إجمالي {Object.keys(rates).length} عملة عالمية</p>
-                  </div>
-                  <button onClick={() => setShowAll(false)} className="p-3 hover:bg-slate-800 rounded-2xl transition-colors text-slate-400 hover:text-white">
-                    <X className="w-6 h-6" />
-                  </button>
-                </div>
-                
-                <div className="p-6 bg-slate-800/30 border-b border-slate-800">
-                  <div className="relative">
-                    <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 w-5 h-5" />
-                    <input 
-                      type="text" 
-                      placeholder="ابحث عن رمز أو اسم عملة..." 
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl py-3 pr-12 pl-4 text-white outline-none focus:ring-2 ring-blue-500/50 transition-all"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="p-8 overflow-y-auto custom-scrollbar grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredRates.map(([symbol, rate]) => (
-                    <motion.div 
-                      layout
-                      key={symbol} 
-                      className="p-4 bg-slate-800/40 rounded-2xl border border-slate-700/50 hover:border-blue-500/50 transition-all group"
-                    >
-                      <div className="flex justify-between items-start">
-                        <span className="text-blue-400 font-bold text-sm">{symbol}</span>
-                        <span className="text-[10px] text-slate-500">{currencyDetails[symbol]?.country || "دولي"}</span>
-                      </div>
-                      <div className="text-lg font-mono mt-1 text-white">{rate.toFixed(4)}</div>
-                      <div className="text-[10px] text-slate-400 mt-1 truncate">
-                        {currencyDetails[symbol]?.name || "عملة عالمية"}
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
 
         {/* Footer */}
         <footer className="mt-20 pb-10 text-center text-slate-500 text-sm border-t border-slate-800 pt-8">
