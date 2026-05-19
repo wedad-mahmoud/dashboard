@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React from 'react';
 import { motion, useMotionValue, useTransform, useSpring } from 'framer-motion';
 
 interface ThreeDCardProps {
@@ -15,8 +15,8 @@ const ThreeDCard = ({ children, className = "" }: ThreeDCardProps) => {
   const mouseXSpring = useSpring(x);
   const mouseYSpring = useSpring(y);
 
-  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["17.5deg", "-17.5deg"]);
-  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-17.5deg", "17.5deg"]);
+  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["12deg", "-12deg"]);
+  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-12deg", "12deg"]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -44,11 +44,11 @@ const ThreeDCard = ({ children, className = "" }: ThreeDCardProps) => {
         rotateX,
         transformStyle: "preserve-3d",
       }}
-      className={`relative h-full w-full rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 shadow-2xl ${className}`}
+      className={`relative h-full w-full rounded-[2rem] bg-gradient-to-br from-[#1a0b2e] to-[#0f051a] border border-purple-500/20 shadow-[0_0_30px_rgba(139,92,246,0.1)] hover:border-lime-400/40 transition-colors duration-500 ${className}`}
     >
       <div
         style={{
-          transform: "translateZ(50px)",
+          transform: "translateZ(40px)",
           transformStyle: "preserve-3d",
         }}
         className="h-full w-full"
